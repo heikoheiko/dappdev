@@ -32,13 +32,11 @@ def create_spread(creator_contract):
 
 def do_spread(spread_contract, creator_contract):
     while True:
-        for i in range(1, 4):
-            # call spread contract start
-            gas = 3000000/i
-            for j in range(i):
-                tx = client.send_transaction(to=spread_contract, startgas=gas)
-                print 'spreading, created:', client.nonce(creator_contract), gas
-            time.sleep(3)
+        gas = 2400042
+        tx = client.send_transaction(to=spread_contract, startgas=gas)
+        print 'spreading fuel:%d / contracts created:%d' % (gas, client.nonce(creator_contract))
+        time.sleep(1)
+
 
 def check_availability(address):
     "checks if there is code at address"  # FIXME, should use listeners

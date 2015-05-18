@@ -1,5 +1,5 @@
 contract Spread {
-    address[16] children;
+    address[2] children;
     address creator_addr;
 
     event NextCalled(address indexed ataddr, uint indexed depth, uint indexed gas, uint val);
@@ -11,8 +11,8 @@ contract Spread {
     function next(uint v, uint depth) {
         NextCalled(this, depth, msg.gas, v);
         address to;
-        uint r = v % 16;
-        v = v / 16;
+        uint r = v % 2;
+        v = v / 2;
 
         to = children[r];
         if (to == 0)
