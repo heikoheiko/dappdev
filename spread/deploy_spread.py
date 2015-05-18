@@ -6,8 +6,9 @@ from ethereum.processblock import mk_contract_address
 
 secret = 'YOUR_SECRET_TO_AN_ACCOUNT'
 PRIVKEY = mk_privkey(secret)  # your privkey here
+RPC_PORT = 4000  # change for Geth
 
-client = JSONRPCClient(privkey=PRIVKEY, print_communication=False)
+client = JSONRPCClient(port=RPC_PORT, privkey=PRIVKEY, print_communication=False)
 code = open('spread.sol').read()
 
 def create_creator():
