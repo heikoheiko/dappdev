@@ -1,6 +1,6 @@
-import soltester
 from ethereum import tester
 from ethereum import utils
+from ethereum._solidity import solc_wrapper
 
 logc = ':info,eth.vm.exit:trace,eth.pb.msg:debug'
 tester.configure_logging(config_string=logc)
@@ -19,8 +19,8 @@ def listener(log):
 
 s = tester.state()
 
-code = soltester.read_contract(fn='spread.sol')
-contract_names = soltester.solc_wrapper.contract_names(code)
+code = open('spread.sol').read()
+contract_names = solc_wrapper.contract_names(code)
 
 creator = s.abi_contract(code, language='solidity', contract_name='Creator', log_listener=listener)
 spread_base = s.abi_contract(code, language='solidity', contract_name='Spread', listen=False)
