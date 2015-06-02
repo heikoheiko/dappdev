@@ -32,6 +32,8 @@ s.mine()
 c = tester.ABIContract(s, spread_base.abi, spread_addr, log_listener=listener)
 print
 for i in range(10):
+    print
+    print
     print 'calling start'
     r = c.start()
     print spread_contracts

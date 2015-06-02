@@ -1,37 +1,48 @@
 contract Spread {
-    address[2] children;
+    address[3] children;
     address creator_addr;
 
     event NextCalled(address indexed ataddr, uint indexed depth, uint indexed gas, uint val);
+    event Calling(address indexed addr, uint indexed depth, uint indexed gas);
+
 
     function Spread(address creator) {
         creator_addr = creator;
     }
 
-    function next(uint v, uint depth) {
+    function next(uint v, uint depth, address root) {
         NextCalled(this, depth, msg.gas, v);
         address to;
-        uint r = v % 2;
-        v = v / 2;
+        uint r = v % 3;
+        v = v / 3;
 
         to = children[r];
-        if (to == 0)
+        if (to == 0 && msg.gas > 500000)
         {
             // create contract
             to = Creator(creator_addr).create();
             children[r] = to;
         }
+        if (to == 0)
+            to = root;
+        if (msg.gas > 30000)
+        {
+            //Calling(to, depth, msg.gas);
+            Spread(to).next(v, depth+1, root);
+        } else
+        {
+            while (msg.gas > 1000)
+                v = v+1;
+        }
 
-        //Calling(to, depth + 1, msg.gas, v);
-        Spread(to).next(v, depth+1);
     }
 
     function () {
-      next(now, 0);
+      start();
     }
 
     function start() {
-      next(now, 0);
+      next(now, 0, address(this));
     }
 
 

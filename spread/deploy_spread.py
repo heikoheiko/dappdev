@@ -1,22 +1,24 @@
 import time
 from ethereum._solidity import solc_wrapper
 from pyethapp.rpc_client import JSONRPCClient, address_encoder
-from pyethapp.accounts import mk_privkey
 from ethereum.processblock import mk_contract_address
+from ethereum.utils import denoms
 
-secret = 'YOUR_SECRET_TO_AN_ACCOUNT'
-PRIVKEY = mk_privkey(secret)  # your privkey here
+
 RPC_PORT = 4000  # change for Geth
-
-client = JSONRPCClient(port=RPC_PORT, privkey=PRIVKEY, print_communication=False)
+client = JSONRPCClient(port=RPC_PORT, print_communication=False)
+sender = client.coinbase
 code = open('spread.sol').read()
 
 def create_creator():
     # create Creator contract
     contract_name = 'Creator'
     binary = solc_wrapper.compile(code, contract_name=contract_name)
+    abi = solc_wrapper.mk_full_signature(code, 'Spread')
+    print abi
     print 'creating Creator contract'
-    creator_contract = client.send_transaction(to='', value=0, data=binary, startgas=400000)
+    assert sender
+    creator_contract = client.send_transaction(sender, to='', value=0, data=binary, startgas=400000)
     assert len(creator_contract) == 40
     print 'creator contract at', creator_contract
     return creator_contract
@@ -25,17 +27,26 @@ def create_spread(creator_contract):
     # will create a Spread contract
     print
     print 'creating spread contract'
-    tx = client.send_transaction(to=creator_contract, startgas=300000)
+    tx = client.send_transaction(sender, to=creator_contract, startgas=300000)
     print 'res', tx
     spread_contract = mk_contract_address(creator_contract.decode('hex'), nonce=0)
     return spread_contract.encode('hex')
 
 def do_spread(spread_contract, creator_contract):
+    """
+    Improve spend from multiple accounts, so we don't get nonce conflicts
+    """
     while True:
         gas = 2400042
-        tx = client.send_transaction(to=spread_contract, startgas=gas)
-        print 'spreading fuel:%d / contracts created:%d' % (gas, client.nonce(creator_contract))
-        time.sleep(1)
+        gas = 3000000
+        gaslimit = client.gaslimit()
+        print "gaslimit", gaslimit
+        # print 'gasprice', client.lastgasprice() / denoms.szabo, 'szabo'
+        gas = gaslimit - 1024
+        for gas in (gas,):
+            tx = client.send_transaction(sender, to=spread_contract, startgas=gas, gasprice=10*denoms.szabo)
+            print 'spreading fuel:%d / contracts created:%d' % (gas, client.nonce(creator_contract))
+        time.sleep(5)
 
 
 def check_availability(address):
@@ -52,9 +63,12 @@ def check_availability(address):
     print 'contract not available at address', address
     return False
 
-
-creator_contract = ''
+create_creator()
+creator_contract= '' #
 spread_contract = ''
+creator_contract= 'e35e196a53cabeb4eb4cdd66467427a798d8c24f' #
+spread_contract = '903b0e300ec230949be02c28af89f9589c82b489'
+
 
 while not check_availability(creator_contract):
     creator_contract = create_creator()
